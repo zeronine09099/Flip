@@ -7,6 +7,8 @@ public static class Events
     public static event Action<Vector3Int, Vector3, bool> BuildTargetChanged;
     public static event Action<Vector3Int> Constructed;
     public static event Action BuildCanceled;
+    public static event Action Fliped;
+    public static event Action HalfFliped;
 
     public static void CallBuildSelected(GameObject buildingPrefab)
     {
@@ -26,5 +28,15 @@ public static class Events
     public static void CallBuildCanceled()
     {
         BuildCanceled?.Invoke();
+    }
+
+    public static void CallFliped()
+    {
+        Fliped?.Invoke();
+    }
+
+    public static void CallHalfFliped()
+    {
+        HalfFliped?.Invoke();
     }
 }

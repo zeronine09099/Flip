@@ -1,28 +1,19 @@
 using System.Collections.Generic;
+using System.Runtime.Serialization;
+
+//using System.Numerics;
 using UnityEngine;
 using UnityEngine.Tilemaps;
-
 public class TileManager : MonoBehaviour
 {
 
     [Header("References")]
-    [SerializeField] private Camera mainCamera;
+    [SerializeField] private MouseScript mouse;
     [SerializeField] private Tilemap buildTilemap;
 
     private readonly HashSet<Vector3Int> constructedCells = new HashSet<Vector3Int>();
 
-    private void Awake()
-    {
-        if (mainCamera == null)
-        {
-            mainCamera = Camera.main;
-        }
 
-        if (buildTilemap == null)
-        {
-            buildTilemap = GetComponent<Tilemap>();
-        }
-    }
 
     private void OnEnable()
     {
@@ -49,19 +40,21 @@ public class TileManager : MonoBehaviour
             return;
         }
 
+        Vector3 cellCenterWorldPosition;
         Vector3Int cellPosition;
         Vector3 worldPosition;
 
-        if (!TryGetMouseTile(out cellPosition, out worldPosition))
+        if (!mouse.TryGetMouseTileCenterWorldPosition(out cellCenterWorldPosition, out cellPosition))
         {
             BuildManager.buildEnable = false;
-            Events.CallBuildTargetChanged(Vector3Int.zero, GetMouseWorldPosition(), false);
+            Events.CallBuildTargetChanged(Vector3Int.zero, mouse.GetMouseWorldPosition(), false);
             return;
         }
 
         //TODO : buildActived == true이고 커서가 타일 위에 있을 때 
         // tileEnable == false라면 buildEnable = false로 바꾸기
         // tileEnable == true이면 buildEnable = true로 바꾸기
+        worldPosition = mouse.GetMouseWorldPosition();
         bool tileEnable = !constructedCells.Contains(cellPosition);
         BuildManager.buildEnable = tileEnable;
 
@@ -86,40 +79,6 @@ public class TileManager : MonoBehaviour
         BuildManager.buildEnable = true;
     }
 
-    private bool TryGetMouseTile(out Vector3Int cellPosition, out Vector3 worldPosition)
-    {
-        cellPosition = Vector3Int.zero;
-        worldPosition = Vector3.zero;
-
-        if (buildTilemap == null)
-        {
-            return false;
-        }
-
-        Vector3 mouseWorldPosition = GetMouseWorldPosition();
-        cellPosition = buildTilemap.WorldToCell(mouseWorldPosition);
-
-        if (!buildTilemap.HasTile(cellPosition))
-        {
-            return false;
-        }
-
-        worldPosition = buildTilemap.GetCellCenterWorld(cellPosition);
-        return true;
-    }
-
-    private Vector3 GetMouseWorldPosition()
-    {
-        if (mainCamera == null)
-        {
-            mainCamera = Camera.main;
-        }
-
-        Vector3 mousePosition = Input.mousePosition;
-        mousePosition.z = -mainCamera.transform.position.z;
-        Vector3 worldPosition = mainCamera.ScreenToWorldPoint(mousePosition);
-        worldPosition.z = 0f;
-        return worldPosition;
-    }
+    
 
 }

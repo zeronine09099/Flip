@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 public class BuildManager : MonoBehaviour
@@ -8,12 +9,12 @@ public class BuildManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private Camera mainCamera;
     [SerializeField] private GameObject buildAvatarPrefab;
-    [SerializeField] private GameObject buildingParent;
+    [SerializeField] private MouseScript mouse;
+    [SerializeField] private Transform buildingParent;
 
     [Header("Avatar Color")]
     [SerializeField] private Color enableColor = new Color(1f, 1f, 1f, 0.6f);
     [SerializeField] private Color disableColor = new Color(1f, 0f, 0f, 0.6f);
-    [SerializeField] private float avatarZPosition = 10f;
 
     private GameObject selectedBuildingPrefab;
     private GameObject buildAvatarInstance;
@@ -35,7 +36,7 @@ public class BuildManager : MonoBehaviour
     //TODO : BuildSelected 이벤트 호출 받으면 BuildAvartar 함수 실행
 
 
-        private void OnEnable()
+    private void OnEnable()
     {
         Events.BuildSelected += BuildAvartarActivate;
         Events.BuildTargetChanged += UpdateBuildTarget;
@@ -140,8 +141,9 @@ public class BuildManager : MonoBehaviour
 
         Instantiate(
             selectedBuildingPrefab, 
-            currentBuildWorldPosition, 
-            Quaternion.identity
+            buildAvatarInstance.transform.position, 
+            Quaternion.identity,
+            buildingParent
             );
     }
 
@@ -179,43 +181,11 @@ public class BuildManager : MonoBehaviour
         buildAvatarRenderer.sortingOrder = selectedRenderer.sortingOrder + 1;
     }
 
-    private bool TryGetMouseTileCenterWorldPosition(out Vector3 cellCenterWorldPosition, out Vector3Int cellPosition)
-    {
-        cellCenterWorldPosition = Vector3.zero;
-        cellPosition = Vector3Int.zero;
-
-        if (mainCamera == null)
-        {
-            mainCamera = Camera.main;
-        }
-
-        if (mainCamera == null || buildTilemap == null)
-        {
-            return false;
-        }
-
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-
-        Plane tilemapPlane = new Plane(
-            buildTilemap.transform.forward,
-            buildTilemap.transform.position
-        );
-
-        if (!tilemapPlane.Raycast(ray, out float distance))
-        {
-            return false;
-        }
-
-        Vector3 hitWorldPosition = ray.GetPoint(distance);
-
-        cellPosition = buildTilemap.WorldToCell(hitWorldPosition);
-        cellCenterWorldPosition = buildTilemap.GetCellCenterWorld(cellPosition);
-
-        return true;
-    }
 
     private void MoveBuildAvatar()
     {
+        float avatarDepthOffset = 0.05f;
+
         if (buildAvatarInstance == null)
         {
             return;
@@ -223,13 +193,13 @@ public class BuildManager : MonoBehaviour
 
         Vector3 targetPosition;
 
-        if (hasBuildTarget)
+        if (!buildEnable)
         {
             targetPosition = currentBuildWorldPosition;
         }
         else
         {
-            if (!TryGetMouseTileCenterWorldPosition(out targetPosition, out currentCellPosition))
+            if (!mouse.TryGetMouseTileCenterWorldPosition(out targetPosition, out currentCellPosition))
             {
                 return;
             }
@@ -257,20 +227,6 @@ public class BuildManager : MonoBehaviour
         currentBuildWorldPosition = worldPosition;
         hasBuildTarget = true;
         buildEnable = canBuild;
-    }
-
-    private Vector3 GetMouseWorldPosition()
-    {
-        if (mainCamera == null)
-        {
-            mainCamera = Camera.main;
-        }
-
-        Vector3 mousePosition = Input.mousePosition;
-        mousePosition.z = -mainCamera.transform.position.z;
-        Vector3 worldPosition = mainCamera.ScreenToWorldPoint(mousePosition);
-        worldPosition.z = 0f;
-        return worldPosition;
     }
 
 
